@@ -26,7 +26,7 @@ namespace RulesEngine.UnitTest
         {
             var workflow = GetWorkflowList();
 
-            var engine = new RulesEngine(null, null);
+            var engine = new RulesEngine();
             engine.AddWorkflow(workflow);
 
             var input1 = new {
@@ -47,7 +47,7 @@ namespace RulesEngine.UnitTest
         {
             var workflow = GetWorkflowList();
 
-            var engine = new RulesEngine(null, null);
+            var engine = new RulesEngine();
             engine.AddWorkflow(workflow);
 
             var input1 = new {
@@ -77,7 +77,7 @@ namespace RulesEngine.UnitTest
         {
             var workflow = GetWorkflowList();
 
-            var engine = new RulesEngine(new string[] { }, null, new ReSettings {
+            var engine = new RulesEngine(new string[] { }, new ReSettings {
                 EnableScopedParams = false
             });
             engine.AddWorkflow(workflow);
@@ -161,10 +161,6 @@ namespace RulesEngine.UnitTest
 
             var localParamNames = resultTree.Rule.LocalParams?.Select(c => c.Name) ?? new List<string>();
             Assert.All(localParamNames, input => Assert.True(resultTree.Inputs.ContainsKey(input)));
-
-#pragma warning disable CS0618 // Type or member is obsolete
-            Assert.All(localParamNames, lp => Assert.Contains(resultTree.RuleEvaluatedParams, c => c.Name == lp));
-#pragma warning restore CS0618 // Type or member is obsolete
 
             if (resultTree.ChildResults?.Any() == true)
             {

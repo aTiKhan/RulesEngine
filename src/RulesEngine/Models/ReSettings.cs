@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using RulesEngine.Actions;
+using RulesEngine.HelperFunctions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -48,15 +49,7 @@ namespace RulesEngine.Models
         /// Sets the mode for Nested rule execution, Default: All
         /// </summary>
         public NestedRuleExecutionMode NestedRuleExecutionMode { get; set; } = NestedRuleExecutionMode.All;
-
-        /// <summary>
-        /// Enables Local params for rules
-        /// </summary>
-        [Obsolete("Use 'EnableScopedParams' instead. This will be removed in next major version")]
-        public bool EnableLocalParams {
-            get { return EnableScopedParams; }
-            set { EnableScopedParams = value; }
-        }
+        public MemCacheConfig CacheConfig { get; set; }
     }
 
     public enum NestedRuleExecutionMode
