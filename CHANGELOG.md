@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [5.0.3]
+- Updated dependencies to latest
+- Fixed RulesEngine throwing exception when type name is same as input name
+- Added config to disable FastCompile for expressions
+- Added RuleParameter.Create method for better handling on types when value is null
+
+## [5.0.2]
+- Fixed Scoped Params returning incorrect results in some corner case scenarios
+
+## [5.0.1]
+- Added option to disable automatic type registry for input parameters in reSettings
+- Added option to make expression case sensitive in reSettings
+
+## [5.0.0]
+- Fixed security bug related to System.Dynamic.Linq.Core
+
+### Breaking Changes
+- As a part of security bug fix, method call for only registered types via reSettings will be allowed. This only impacts strongly typed inputs and nested types
+
+
 ## [4.0.0]
 - RulesEngine is now available in both dotnet 6 and netstandard 2.0
 - Dependency on ILogger, MemoryCache have been removed 

@@ -12,6 +12,25 @@ namespace RulesEngine.Models
     [ExcludeFromCodeCoverage]
     public class ReSettings
     {
+        public ReSettings() { }
+
+        // create a copy of settings
+        internal ReSettings(ReSettings reSettings)
+        {
+            CustomTypes = reSettings.CustomTypes;
+            CustomActions = reSettings.CustomActions;
+            EnableExceptionAsErrorMessage = reSettings.EnableExceptionAsErrorMessage;
+            IgnoreException = reSettings.IgnoreException;
+            EnableFormattedErrorMessage = reSettings.EnableFormattedErrorMessage;
+            EnableScopedParams = reSettings.EnableScopedParams;
+            NestedRuleExecutionMode = reSettings.NestedRuleExecutionMode;
+            CacheConfig = reSettings.CacheConfig;
+            IsExpressionCaseSensitive = reSettings.IsExpressionCaseSensitive;
+            AutoRegisterInputType = reSettings.AutoRegisterInputType;
+            UseFastExpressionCompiler = reSettings.UseFastExpressionCompiler;
+        }
+
+
         /// <summary>
         /// Get/Set the custom types to be used in Rule expressions
         /// </summary>
@@ -46,10 +65,25 @@ namespace RulesEngine.Models
         public bool EnableScopedParams { get; set; } = true;
 
         /// <summary>
+        /// Sets whether expression are case sensitive
+        /// </summary>
+        public bool IsExpressionCaseSensitive { get; set; } = false;
+
+        /// <summary>
+        /// Auto Registers input type in Custom Type to allow calling method on type.
+        /// Default : true
+        /// </summary>
+        public bool AutoRegisterInputType { get; set; } = true;
+
+        /// <summary>
         /// Sets the mode for Nested rule execution, Default: All
         /// </summary>
         public NestedRuleExecutionMode NestedRuleExecutionMode { get; set; } = NestedRuleExecutionMode.All;
         public MemCacheConfig CacheConfig { get; set; }
+        /// <summary>
+        /// Whether to use FastExpressionCompiler for rule compilation
+        /// </summary>
+        public bool UseFastExpressionCompiler { get; set; } = true;
     }
 
     public enum NestedRuleExecutionMode

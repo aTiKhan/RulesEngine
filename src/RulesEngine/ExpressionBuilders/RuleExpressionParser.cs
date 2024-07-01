@@ -17,15 +17,11 @@ namespace RulesEngine.ExpressionBuilders
     public class RuleExpressionParser
     {
         private readonly ReSettings _reSettings;
-        private static MemCache _memoryCache;
         private readonly IDictionary<string, MethodInfo> _methodInfo;
 
-        public RuleExpressionParser(ReSettings reSettings)
+        public RuleExpressionParser(ReSettings reSettings = null)
         {
-            _reSettings = reSettings;
-            _memoryCache = _memoryCache ?? new MemCache(new MemCacheConfig {
-                SizeLimit = 1000
-            });
+            _reSettings = reSettings ?? new ReSettings();
             _methodInfo = new Dictionary<string, MethodInfo>();
             PopulateMethodInfo();
         }
@@ -37,7 +33,10 @@ namespace RulesEngine.ExpressionBuilders
         }
         public Expression Parse(string expression, ParameterExpression[] parameters, Type returnType)
         {
-            var config = new ParsingConfig { CustomTypeProvider = new CustomTypeProvider(_reSettings.CustomTypes) };
+            var config = new ParsingConfig { 
+                CustomTypeProvider = new CustomTypeProvider(_reSettings.CustomTypes),
+                IsCaseSensitive = _reSettings.IsExpressionCaseSensitive
+            };
             return new ExpressionParser(parameters, expression, new object[] { }, config).Parse(returnType);
 
         }
@@ -49,19 +48,26 @@ namespace RulesEngine.ExpressionBuilders
             {
                 rtype = null;
             }
-            var cacheKey = GetCacheKey(expression, ruleParams, typeof(T));
-            return _memoryCache.GetOrCreate(cacheKey, () => {
-                var parameterExpressions = GetParameterExpression(ruleParams).ToArray();
+            var parameterExpressions = GetParameterExpression(ruleParams).ToArray();
             
-                var e = Parse(expression, parameterExpressions, rtype);
-                if(rtype == null)
-                {
-                    e = Expression.Convert(e, typeof(T));
-                }
-                var expressionBody = new List<Expression>() { e };
-                var wrappedExpression = WrapExpression<T>(expressionBody, parameterExpressions, new ParameterExpression[] { });
-                return wrappedExpression.CompileFast();
-            });
+            var e = Parse(expression, parameterExpressions, rtype);
+            if(rtype == null)
+            {
+                e = Expression.Convert(e, typeof(T));
+            }
+            var expressionBody = new List<Expression>() { e };
+            var wrappedExpression = WrapExpression<T>(expressionBody, parameterExpressions, new ParameterExpression[] { });
+            return CompileExpression(wrappedExpression);
+
+        }
+
+        private Func<object[], T> CompileExpression<T>(Expression<Func<object[], T>> expression)
+        {
+            if(_reSettings.UseFastExpressionCompiler)
+            {
+                return expression.CompileFast();
+            }
+            return expression.Compile();
         }
 
         private Expression<Func<object[], T>> WrapExpression<T>(List<Expression> expressionList, ParameterExpression[] parameters, ParameterExpression[] variables)
@@ -80,7 +86,7 @@ namespace RulesEngine.ExpressionBuilders
         {
             ruleExpParams = ruleExpParams ?? new RuleExpressionParameter[] { };
             var expression = CreateDictionaryExpression(ruleParams, ruleExpParams);
-            return expression.CompileFast();
+            return CompileExpression(expression);
         }
 
         public T Evaluate<T>(string expression, RuleParameter[] ruleParams)
@@ -152,14 +158,6 @@ namespace RulesEngine.ExpressionBuilders
             body.Add(dict);
 
             return WrapExpression<Dictionary<string,object>>(body, paramExp.ToArray(), variableExp.ToArray());
-        }
-
-        private string GetCacheKey(string expression, RuleParameter[] ruleParameters, Type returnType)
-        {
-            var paramKey = string.Join("|", ruleParameters.Select(c => c.Name + "_" + c.Type.ToString()));
-            var returnTypeKey = returnType?.ToString() ?? "null";
-            var combined = $"Expression:{expression}-Params:{paramKey}-ReturnType:{returnTypeKey}";
-            return combined;
         }
     }
 }
