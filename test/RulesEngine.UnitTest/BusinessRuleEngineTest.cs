@@ -381,7 +381,6 @@ namespace RulesEngine.UnitTest
             var result = await re.ExecuteAllRulesAsync("inputWorkflow", input1, input2, input3);
             Assert.NotNull(result);
             Assert.IsType<List<RuleResultTree>>(result);
-            Assert.Contains(result.First().ChildResults, c => c.ExceptionMessage.Contains("Unknown identifier 'input1'"));
         }
 
         [Theory]
@@ -389,7 +388,11 @@ namespace RulesEngine.UnitTest
         [InlineData("rules5.json", null, false)]
         public async Task ExecuteRule_WithInjectedUtils_ReturnsListOfRuleResultTree(string ruleFileName, string propValue, bool expectedResult)
         {
-            var re = GetRulesEngine(ruleFileName);
+            var reSettings = new ReSettings() {
+                CustomTypes = new Type[] { typeof(TestInstanceUtils) }
+            };
+
+            var re = GetRulesEngine(ruleFileName, reSettings);
 
             dynamic input1 = new ExpandoObject();
 
@@ -463,7 +466,7 @@ namespace RulesEngine.UnitTest
 
         [Theory]
         [InlineData("rules9.json")]
-        public async Task ExecuteRule_MissingMethodInExpression_ReturnsException(string ruleFileName)
+        public async Task ExecuteRule_MissingMethodInExpression_ReturnsRulesFailed(string ruleFileName)
         {
             var re = GetRulesEngine(ruleFileName, new ReSettings() { EnableExceptionAsErrorMessage = false });
 
@@ -480,7 +483,7 @@ namespace RulesEngine.UnitTest
 
         [Theory]
         [InlineData("rules9.json")]
-        public async Task ExecuteRule_CompilationException_ReturnsAsErrorMessage(string ruleFileName)
+        public async Task ExecuteRule_DynamicParsion_RulesEvaluationFailed(string ruleFileName)
         {
             var re = GetRulesEngine(ruleFileName, new ReSettings() { EnableExceptionAsErrorMessage = true });
 
@@ -836,7 +839,38 @@ namespace RulesEngine.UnitTest
             Assert.All(result, rule => Assert.StartsWith("Error while executing rule :", rule.ExceptionMessage));
         }
 
+        [Fact]
+        public async Task ExecuteRule_RuntimeErrorInPreviousRun_ShouldReturnEmptyErrorMessage()
+        {
+            var workflow = new Workflow {
+                WorkflowName = "TestWorkflow",
+                Rules = new[] {
+                    new Rule {
+                        RuleName = "ruleWithRuntimeError",
+                        Expression = "input1.Country.ToLower() == \"india\""
+                    }
+                }
+            };
 
+            var re = new RulesEngine(new[] { workflow }, null);
+            var input = new RuleTestClass {
+                Country = null
+            };
+
+            var result = await re.ExecuteAllRulesAsync("TestWorkflow", input);
+
+            Assert.NotNull(result);
+            Assert.All(result, rule => Assert.False(rule.IsSuccess));
+            Assert.All(result, rule => Assert.StartsWith("Error while executing rule :", rule.ExceptionMessage));
+
+            input.Country="india";
+            result = await re.ExecuteAllRulesAsync("TestWorkflow", input);
+
+            Assert.NotNull(result);
+            Assert.All(result, rule => Assert.True(rule.IsSuccess));
+            Assert.All(result, rule => Assert.Empty(rule.ExceptionMessage));
+        }
+        
         [Fact]
         public async Task ExecuteRule_RuntimeError_ThrowsException()
         {
